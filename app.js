@@ -115,7 +115,8 @@ function setDefaultDates() {
     const today = new Date().toISOString().split('T')[0];
     const now = new Date().toTimeString().slice(0, 5);
     document.getElementById('attendance-date').value = today;
-    document.getElementById('attendance-time').value = now;
+    document.getElementById('attendance-time-start').value = now;
+    document.getElementById('attendance-time-end').value = now;
     document.getElementById('record-date').value = today;
     document.getElementById('export-daily-date').value = today;
     document.getElementById('export-date-from').value = today;
@@ -156,14 +157,19 @@ function toggleSidebar() {
 function addStudent(event) {
     event.preventDefault();
     const name = document.getElementById('student-name').value.trim();
-    const id = document.getElementById('student-id').value.trim();
     const cls = document.getElementById('student-class').value.trim();
 
-    if (!name || !id || !cls) { showToast('Sila isi semua maklumat.', 'error'); return; }
+    if (!name || !cls) { showToast('Sila isi semua maklumat.', 'error'); return; }
 
     const students = getStudents();
-    if (students.some(s => s.id === id)) { showToast('No. ID sudah wujud!', 'error'); return; }
 
+    // Check duplicate name in same class
+    if (students.some(s => s.name.toLowerCase() === name.toLowerCase() && s.class === cls)) {
+        showToast('Pelajar dengan nama & kelas yang sama sudah wujud!', 'error'); return;
+    }
+
+    // Auto-generate unique ID
+    const id = 'S' + Date.now();
     students.push({ id, name, class: cls });
     students.sort((a, b) => a.name.localeCompare(b.name));
     saveStudents(students);
@@ -179,7 +185,7 @@ function renderStudentList() {
     const cf = document.getElementById('filter-class').value;
 
     const filtered = students.filter(s => {
-        const ms = s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search);
+        const ms = s.name.toLowerCase().includes(search);
         return ms && (!cf || s.class === cf);
     });
 
@@ -198,7 +204,6 @@ function renderStudentList() {
     tbody.innerHTML = filtered.map((s, i) => `
         <tr>
             <td>${i+1}</td>
-            <td><strong>${esc(s.id)}</strong></td>
             <td>${esc(s.name)}</td>
             <td>${esc(s.class)}</td>
             <td><button class="btn btn-danger btn-sm" onclick="deleteStudent('${esc(s.id)}')">🗑 Padam</button></td>
@@ -208,8 +213,8 @@ function renderStudentList() {
     cards.innerHTML = filtered.map((s, i) => `
         <div class="mobile-card-item">
             <div class="mobile-card-info">
-                <span class="mc-name">${esc(s.name)}</span>
-                <span class="mc-sub">${esc(s.id)} · ${esc(s.class)}</span>
+                <span class="mc-name">${i+1}. ${esc(s.name)}</span>
+                <span class="mc-sub">${esc(s.class)}</span>
             </div>
             <button class="btn btn-danger btn-sm" onclick="deleteStudent('${esc(s.id)}')">🗑</button>
         </div>`).join('');
@@ -272,7 +277,6 @@ function renderAttendanceForm() {
         const st = dr[s.id] || tempAttendance[s.id] || '';
         return `<tr>
             <td>${i+1}</td>
-            <td><strong>${esc(s.id)}</strong></td>
             <td>${esc(s.name)}</td>
             <td>${esc(s.class)}</td>
             <td><div class="attendance-toggle">
@@ -287,8 +291,8 @@ function renderAttendanceForm() {
         return `<div class="mobile-card-item" style="flex-direction:column;align-items:stretch;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
                 <div class="mobile-card-info">
-                    <span class="mc-name">${esc(s.name)}</span>
-                    <span class="mc-sub">${esc(s.id)} · ${esc(s.class)}</span>
+                    <span class="mc-name">${i+1}. ${esc(s.name)}</span>
+                    <span class="mc-sub">${esc(s.class)}</span>
                 </div>
             </div>
             <div class="attendance-card-toggle">
@@ -323,12 +327,13 @@ function markAll(status) {
 
 function saveAttendance() {
     const date = document.getElementById('attendance-date').value;
-    const time = document.getElementById('attendance-time').value;
+    const timeStart = document.getElementById('attendance-time-start').value;
+    const timeEnd = document.getElementById('attendance-time-end').value;
     const instructor = document.getElementById('attendance-instructor').value.trim();
 
     if (!date) { showToast('Sila pilih tarikh.', 'error'); return; }
     if (!instructor) { showToast('Sila masukkan nama pengajar.', 'error'); return; }
-    if (!time) { showToast('Sila masukkan masa.', 'error'); return; }
+    if (!timeStart || !timeEnd) { showToast('Sila masukkan masa mula dan tamat.', 'error'); return; }
 
     const cf = document.getElementById('attendance-class-filter').value;
     const filtered = cf ? getStudents().filter(s => s.class === cf) : getStudents();
@@ -342,9 +347,9 @@ function saveAttendance() {
     filtered.forEach(s => { records[date][s.id] = tempAttendance[s.id]; });
     saveAttendanceRecords(records);
 
-    // Save meta (instructor, time)
+    // Save meta (instructor, time range)
     const meta = getAttendanceMeta();
-    meta[date] = { instructor, time, savedAt: new Date().toISOString() };
+    meta[date] = { instructor, timeStart, timeEnd, savedAt: new Date().toISOString() };
     saveAttendanceMeta(meta);
 
     tempAttendance = {};
@@ -377,7 +382,7 @@ function loadRecords() {
     const dm = meta[date];
     if (dm) {
         instrInfo.style.display = 'flex';
-        instrInfo.innerHTML = `<span>👨‍🏫 <strong>${esc(dm.instructor)}</strong></span><span>🕐 ${esc(dm.time)}</span>`;
+        instrInfo.innerHTML = `<span>👨‍🏫 <strong>${esc(dm.instructor)}</strong></span><span>🕐 ${esc(dm.timeStart || dm.time || '')} - ${esc(dm.timeEnd || '')}</span>`;
     } else { instrInfo.style.display = 'none'; }
 
     const dr = records[date];
@@ -402,16 +407,16 @@ function loadRecords() {
         const st = dr[s.id];
         const bc = st==='hadir'?'badge-present':'badge-absent';
         const bt = st==='hadir'?'✅ Hadir':'❌ Tidak Hadir';
-        return `<tr><td>${i+1}</td><td><strong>${esc(s.id)}</strong></td><td>${esc(s.name)}</td><td>${esc(s.class)}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
+        return `<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.class)}</td><td><span class="badge ${bc}">${bt}</span></td></tr>`;
     }).join('');
 
     // Mobile
-    cards.innerHTML = fs.map(s => {
+    cards.innerHTML = fs.map((s,i) => {
         const st = dr[s.id];
         const bc = st==='hadir'?'badge-present':'badge-absent';
         const bt = st==='hadir'?'✅ Hadir':'❌ Tidak Hadir';
         return `<div class="mobile-card-item">
-            <div class="mobile-card-info"><span class="mc-name">${esc(s.name)}</span><span class="mc-sub">${esc(s.id)} · ${esc(s.class)}</span></div>
+            <div class="mobile-card-info"><span class="mc-name">${i+1}. ${esc(s.name)}</span><span class="mc-sub">${esc(s.class)}</span></div>
             <span class="badge ${bc}">${bt}</span></div>`;
     }).join('');
 }
@@ -440,7 +445,7 @@ function updateDashboard() {
     const instrDiv = document.getElementById('dashboard-instructor-info');
     if (dm) {
         instrDiv.style.display = 'flex';
-        instrDiv.innerHTML = `<span>👨‍🏫 <strong>${esc(dm.instructor)}</strong></span><span>🕐 ${esc(dm.time)}</span>`;
+        instrDiv.innerHTML = `<span>👨‍🏫 <strong>${esc(dm.instructor)}</strong></span><span>🕐 ${esc(dm.timeStart || dm.time || '')} - ${esc(dm.timeEnd || '')}</span>`;
     } else { instrDiv.style.display = 'none'; }
 
     const todayList = document.getElementById('today-attendance-list');
@@ -451,13 +456,13 @@ function updateDashboard() {
 
     todayList.innerHTML = ps.length > 0 ? ps.map(s => `
         <div class="today-list-item">
-            <div class="student-info-mini"><span class="name">${esc(s.name)}</span><span class="class-name">${esc(s.class)} · ${esc(s.id)}</span></div>
+            <div class="student-info-mini"><span class="name">${esc(s.name)}</span><span class="class-name">${esc(s.class)}</span></div>
             <span class="badge badge-present">✅</span></div>`).join('') :
         '<p class="empty-message">Tiada rekod kehadiran hari ini.</p>';
 
     absentList.innerHTML = as.length > 0 ? as.map(s => `
         <div class="today-list-item">
-            <div class="student-info-mini"><span class="name">${esc(s.name)}</span><span class="class-name">${esc(s.class)} · ${esc(s.id)}</span></div>
+            <div class="student-info-mini"><span class="name">${esc(s.name)}</span><span class="class-name">${esc(s.class)}</span></div>
             <span class="badge badge-absent">❌</span></div>`).join('') :
         '<p class="empty-message">Tiada pelajar tidak hadir.</p>';
 }
@@ -472,7 +477,7 @@ function toggleExportOptions() {
 
 function populateExportStudentSelect() {
     const sel = document.getElementById('export-student-select');
-    sel.innerHTML = getStudents().map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${esc(s.id)})</option>`).join('');
+    sel.innerHTML = getStudents().map(s => `<option value="${esc(s.id)}">${esc(s.name)} — ${esc(s.class)}</option>`).join('');
 }
 
 function exportPDF() {
@@ -520,7 +525,7 @@ function exportDailyPDF(doc, students, records, meta, cf) {
     doc.text(`Tarikh: ${fmtDate(date)}`, 20, y); y += 6;
     if (dm) {
         doc.text(`Pengajar: ${dm.instructor}`, 20, y); y += 6;
-        doc.text(`Masa: ${dm.time}`, 20, y); y += 6;
+        doc.text(`Masa: ${dm.timeStart || dm.time || ''} - ${dm.timeEnd || ''}`, 20, y); y += 6;
     }
     if (cf) { doc.text(`Kelas: ${cf}`, 20, y); y += 6; }
 
@@ -532,14 +537,14 @@ function exportDailyPDF(doc, students, records, meta, cf) {
 
     doc.autoTable({
         startY: y + 4,
-        head: [['No.','No. ID','Nama Pelajar','Kelas','Status']],
-        body: filtered.map((s,i) => [i+1, s.id, s.name, s.class, dr[s.id]==='hadir'?'HADIR':'TIDAK HADIR']),
+        head: [['No.','Nama Pelajar','Kelas','Status']],
+        body: filtered.map((s,i) => [i+1, s.name, s.class, dr[s.id]==='hadir'?'HADIR':'TIDAK HADIR']),
         theme:'grid',
         headStyles:{fillColor:[79,70,229],textColor:255,fontStyle:'bold',halign:'center'},
         styles:{fontSize:9,cellPadding:3},
-        columnStyles:{0:{halign:'center',cellWidth:12},1:{cellWidth:25},4:{halign:'center',cellWidth:30}},
+        columnStyles:{0:{halign:'center',cellWidth:12},3:{halign:'center',cellWidth:30}},
         alternateRowStyles:{fillColor:[245,247,250]},
-        didParseCell(d){if(d.column.index===4&&d.section==='body'){d.cell.styles.fontStyle='bold';d.cell.styles.textColor=d.cell.raw==='HADIR'?[5,150,105]:[220,38,38];}}
+        didParseCell(d){if(d.column.index===3&&d.section==='body'){d.cell.styles.fontStyle='bold';d.cell.styles.textColor=d.cell.raw==='HADIR'?[5,150,105]:[220,38,38];}}
     });
 }
 
@@ -559,18 +564,18 @@ function exportRangePDF(doc, students, records, meta, cf) {
 
     doc.autoTable({
         startY: y + 2,
-        head:[['No.','No. ID','Nama','Kelas','Hadir','Tidak Hadir','Jumlah','%']],
+        head:[['No.','Nama','Kelas','Hadir','Tidak Hadir','Jumlah','%']],
         body: filtered.map((s,i) => {
             let p=0,a=0;
             dates.forEach(d=>{if(records[d]&&records[d][s.id]){records[d][s.id]==='hadir'?p++:a++;}});
-            const t=p+a; return [i+1,s.id,s.name,s.class,p,a,t,t>0?Math.round(p/t*100)+'%':'0%'];
+            const t=p+a; return [i+1,s.name,s.class,p,a,t,t>0?Math.round(p/t*100)+'%':'0%'];
         }),
         theme:'grid',
         headStyles:{fillColor:[79,70,229],textColor:255,fontStyle:'bold',halign:'center',fontSize:8},
         styles:{fontSize:8,cellPadding:2.5},
-        columnStyles:{0:{halign:'center',cellWidth:10},1:{cellWidth:20},4:{halign:'center',cellWidth:15},5:{halign:'center',cellWidth:18},6:{halign:'center',cellWidth:15},7:{halign:'center',cellWidth:15}},
+        columnStyles:{0:{halign:'center',cellWidth:10},3:{halign:'center',cellWidth:15},4:{halign:'center',cellWidth:18},5:{halign:'center',cellWidth:15},6:{halign:'center',cellWidth:15}},
         alternateRowStyles:{fillColor:[245,247,250]},
-        didParseCell(d){if(d.column.index===7&&d.section==='body'){const v=parseInt(d.cell.raw);d.cell.styles.fontStyle='bold';d.cell.styles.textColor=v>=80?[5,150,105]:v>=50?[245,158,11]:[220,38,38];}}
+        didParseCell(d){if(d.column.index===6&&d.section==='body'){const v=parseInt(d.cell.raw);d.cell.styles.fontStyle='bold';d.cell.styles.textColor=v>=80?[5,150,105]:v>=50?[245,158,11]:[220,38,38];}}
     });
 }
 
@@ -582,7 +587,7 @@ function exportStudentPDF(doc, students, records, meta) {
     let y = 42;
     doc.setFontSize(11); doc.setFont(undefined,'normal');
     doc.text(`Nama: ${student.name}`, 20, y); y+=6;
-    doc.text(`No. ID: ${student.id}  |  Kelas: ${student.class}`, 20, y); y+=8;
+    doc.text(`Kelas: ${student.class}`, 20, y); y+=8;
 
     const rows = []; let tp=0,ta=0;
     Object.keys(records).sort().forEach(date => {
@@ -590,7 +595,8 @@ function exportStudentPDF(doc, students, records, meta) {
             const st = records[date][sid];
             st==='hadir'?tp++:ta++;
             const dm = meta[date];
-            rows.push([rows.length+1, fmtDate(date), dm?dm.time:'-', dm?dm.instructor:'-', st==='hadir'?'HADIR':'TIDAK HADIR']);
+            const timeStr = dm ? `${dm.timeStart||dm.time||'-'} - ${dm.timeEnd||''}` : '-';
+            rows.push([rows.length+1, fmtDate(date), timeStr, dm?dm.instructor:'-', st==='hadir'?'HADIR':'TIDAK HADIR']);
         }
     });
 

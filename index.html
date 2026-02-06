@@ -154,15 +154,9 @@
                             <label for="student-name">Nama Pelajar</label>
                             <input type="text" id="student-name" placeholder="Masukkan nama pelajar" required>
                         </div>
-                        <div class="form-row-2col">
-                            <div class="form-group">
-                                <label for="student-id">No. ID</label>
-                                <input type="text" id="student-id" placeholder="Cth: STD001" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="student-class">Kelas</label>
-                                <input type="text" id="student-class" placeholder="Cth: 5 Bestari" required>
-                            </div>
+                        <div class="form-group">
+                            <label for="student-class">Kelas</label>
+                            <input type="text" id="student-class" placeholder="Cth: 5 Bestari" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-full">+ Tambah Pelajar</button>
                     </div>
@@ -185,7 +179,6 @@
                         <thead>
                             <tr>
                                 <th>No.</th>
-                                <th>No. ID</th>
                                 <th>Nama Pelajar</th>
                                 <th>Kelas</th>
                                 <th>Tindakan</th>
@@ -211,14 +204,18 @@
                         <label for="attendance-instructor">Nama Pengajar / Guru</label>
                         <input type="text" id="attendance-instructor" placeholder="Cth: Cikgu Ahmad" required>
                     </div>
+                    <div class="form-group">
+                        <label for="attendance-date">Tarikh</label>
+                        <input type="date" id="attendance-date" required>
+                    </div>
                     <div class="form-row-2col">
                         <div class="form-group">
-                            <label for="attendance-date">Tarikh</label>
-                            <input type="date" id="attendance-date" required>
+                            <label for="attendance-time-start">Masa Mula</label>
+                            <input type="time" id="attendance-time-start" required>
                         </div>
                         <div class="form-group">
-                            <label for="attendance-time">Masa</label>
-                            <input type="time" id="attendance-time" required>
+                            <label for="attendance-time-end">Masa Tamat</label>
+                            <input type="time" id="attendance-time-end" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -241,7 +238,6 @@
                         <thead>
                             <tr>
                                 <th>No.</th>
-                                <th>No. ID</th>
                                 <th>Nama Pelajar</th>
                                 <th>Kelas</th>
                                 <th>Status Kehadiran</th>
@@ -300,7 +296,6 @@
                         <thead>
                             <tr>
                                 <th>No.</th>
-                                <th>No. ID</th>
                                 <th>Nama Pelajar</th>
                                 <th>Kelas</th>
                                 <th>Status</th>
