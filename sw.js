@@ -1,5 +1,5 @@
 // Service Worker - Sistem Kehadiran Pelajar
-const CACHE_NAME = 'kehadiran-v2';
+const CACHE_NAME = 'kehadiran-v3';
 const ASSETS = [
     './',
     './index.html',

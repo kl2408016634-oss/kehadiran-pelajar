@@ -22,7 +22,7 @@
     <script src="firebase-config.js"></script>
 </head>
 <body>
-    <!-- Sidebar -->
+    <!-- Sidebar (Desktop) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
@@ -45,7 +45,7 @@
             </button>
             <button class="nav-btn" data-tab="records" onclick="switchTab('records')">
                 <span class="nav-icon">📁</span>
-                <span>Rekod Kehadiran</span>
+                <span>Rekod</span>
             </button>
             <button class="nav-btn" data-tab="export" onclick="switchTab('export')">
                 <span class="nav-icon">📄</span>
@@ -53,9 +53,33 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <p>Sistem Kehadiran Pelajar v1.0</p>
+            <p>Sistem Kehadiran Pelajar v2.0</p>
         </div>
     </aside>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="bottom-nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <span class="bottom-nav-icon">📊</span>
+            <span class="bottom-nav-label">Utama</span>
+        </button>
+        <button class="bottom-nav-btn" data-tab="students" onclick="switchTab('students')">
+            <span class="bottom-nav-icon">👥</span>
+            <span class="bottom-nav-label">Pelajar</span>
+        </button>
+        <button class="bottom-nav-btn" data-tab="attendance" onclick="switchTab('attendance')">
+            <span class="bottom-nav-icon">✅</span>
+            <span class="bottom-nav-label">Kehadiran</span>
+        </button>
+        <button class="bottom-nav-btn" data-tab="records" onclick="switchTab('records')">
+            <span class="bottom-nav-icon">📁</span>
+            <span class="bottom-nav-label">Rekod</span>
+        </button>
+        <button class="bottom-nav-btn" data-tab="export" onclick="switchTab('export')">
+            <span class="bottom-nav-icon">📄</span>
+            <span class="bottom-nav-label">PDF</span>
+        </button>
+    </nav>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -89,14 +113,14 @@
                     <div class="stat-icon">❌</div>
                     <div class="stat-info">
                         <h3 id="stat-absent-today">0</h3>
-                        <p>Tidak Hadir Hari Ini</p>
+                        <p>Tidak Hadir</p>
                     </div>
                 </div>
                 <div class="stat-card stat-percent">
                     <div class="stat-icon">📈</div>
                     <div class="stat-info">
                         <h3 id="stat-percent-today">0%</h3>
-                        <p>Peratus Kehadiran</p>
+                        <p>Peratus</p>
                     </div>
                 </div>
             </div>
@@ -104,6 +128,7 @@
             <div class="dashboard-grid">
                 <div class="card">
                     <h3 class="card-title">Kehadiran Hari Ini</h3>
+                    <div id="dashboard-instructor-info" class="instructor-info-bar" style="display:none;"></div>
                     <div id="today-attendance-list" class="today-list">
                         <p class="empty-message">Tiada rekod kehadiran untuk hari ini.</p>
                     </div>
@@ -123,34 +148,39 @@
                 <div class="card-header">
                     <h3 class="card-title">Tambah Pelajar Baru</h3>
                 </div>
-                <form id="add-student-form" class="form-row" onsubmit="addStudent(event)">
-                    <div class="form-group">
-                        <label for="student-name">Nama Pelajar</label>
-                        <input type="text" id="student-name" placeholder="Masukkan nama pelajar" required>
+                <form id="add-student-form" onsubmit="addStudent(event)">
+                    <div class="form-stack">
+                        <div class="form-group">
+                            <label for="student-name">Nama Pelajar</label>
+                            <input type="text" id="student-name" placeholder="Masukkan nama pelajar" required>
+                        </div>
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label for="student-id">No. ID</label>
+                                <input type="text" id="student-id" placeholder="Cth: STD001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="student-class">Kelas</label>
+                                <input type="text" id="student-class" placeholder="Cth: 5 Bestari" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">+ Tambah Pelajar</button>
                     </div>
-                    <div class="form-group">
-                        <label for="student-id">No. ID / No. Pendaftaran</label>
-                        <input type="text" id="student-id" placeholder="Cth: STD001" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="student-class">Kelas</label>
-                        <input type="text" id="student-class" placeholder="Cth: 5 Bestari" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">+ Tambah Pelajar</button>
                 </form>
             </div>
 
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Senarai Pelajar</h3>
-                    <div class="card-actions">
-                        <input type="text" id="search-student" placeholder="Cari pelajar..." class="search-input" oninput="renderStudentList()">
-                        <select id="filter-class" class="select-input" onchange="renderStudentList()">
-                            <option value="">Semua Kelas</option>
-                        </select>
-                    </div>
                 </div>
-                <div class="table-wrapper">
+                <div class="form-stack" style="margin-bottom:1rem;">
+                    <input type="text" id="search-student" placeholder="🔍 Cari pelajar..." class="search-input" oninput="renderStudentList()">
+                    <select id="filter-class" class="select-input" onchange="renderStudentList()">
+                        <option value="">Semua Kelas</option>
+                    </select>
+                </div>
+                <!-- Desktop table -->
+                <div class="table-wrapper desktop-only">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -161,10 +191,11 @@
                                 <th>Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody id="student-table-body">
-                        </tbody>
+                        <tbody id="student-table-body"></tbody>
                     </table>
                 </div>
+                <!-- Mobile card list -->
+                <div class="mobile-card-list mobile-only" id="student-card-list"></div>
                 <p class="empty-message" id="no-students-msg" style="display:none;">Tiada pelajar didaftarkan lagi.</p>
             </div>
         </section>
@@ -175,10 +206,20 @@
                 <div class="card-header">
                     <h3 class="card-title">Ambil Kehadiran</h3>
                 </div>
-                <div class="form-row">
+                <div class="form-stack">
                     <div class="form-group">
-                        <label for="attendance-date">Tarikh</label>
-                        <input type="date" id="attendance-date" required>
+                        <label for="attendance-instructor">Nama Pengajar / Guru</label>
+                        <input type="text" id="attendance-instructor" placeholder="Cth: Cikgu Ahmad" required>
+                    </div>
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label for="attendance-date">Tarikh</label>
+                            <input type="date" id="attendance-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="attendance-time">Masa</label>
+                            <input type="time" id="attendance-time" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="attendance-class-filter">Kelas</label>
@@ -186,15 +227,16 @@
                             <option value="">Semua Kelas</option>
                         </select>
                     </div>
-                    <div class="form-group btn-group-inline">
-                        <button class="btn btn-success" onclick="markAll('hadir')">Tandakan Semua Hadir</button>
-                        <button class="btn btn-danger" onclick="markAll('tidak hadir')">Tandakan Semua Tidak Hadir</button>
+                    <div class="form-row-2col">
+                        <button class="btn btn-success btn-full" onclick="markAll('hadir')">✅ Semua Hadir</button>
+                        <button class="btn btn-danger btn-full" onclick="markAll('tidak hadir')">❌ Semua Tidak Hadir</button>
                     </div>
                 </div>
             </div>
 
             <div class="card">
-                <div class="table-wrapper">
+                <!-- Desktop table -->
+                <div class="table-wrapper desktop-only">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -205,13 +247,14 @@
                                 <th>Status Kehadiran</th>
                             </tr>
                         </thead>
-                        <tbody id="attendance-table-body">
-                        </tbody>
+                        <tbody id="attendance-table-body"></tbody>
                     </table>
                 </div>
+                <!-- Mobile card list -->
+                <div class="mobile-card-list mobile-only" id="attendance-card-list"></div>
                 <p class="empty-message" id="no-attendance-msg" style="display:none;">Sila daftarkan pelajar terlebih dahulu.</p>
                 <div class="form-actions" id="save-attendance-section" style="display:none;">
-                    <button class="btn btn-primary btn-lg" onclick="saveAttendance()">💾 Simpan Kehadiran</button>
+                    <button class="btn btn-primary btn-lg btn-full" onclick="saveAttendance()">💾 Simpan Kehadiran</button>
                 </div>
             </div>
         </section>
@@ -221,7 +264,9 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Rekod Kehadiran</h3>
-                    <div class="card-actions">
+                </div>
+                <div class="form-stack">
+                    <div class="form-row-2col">
                         <div class="form-group">
                             <label for="record-date">Pilih Tarikh</label>
                             <input type="date" id="record-date" onchange="loadRecords()">
@@ -234,6 +279,7 @@
                         </div>
                     </div>
                 </div>
+                <div class="instructor-info-bar" id="record-instructor-info" style="display:none;"></div>
                 <div class="record-summary" id="record-summary" style="display:none;">
                     <div class="summary-item present">
                         <span>Hadir:</span>
@@ -248,7 +294,8 @@
                         <strong id="record-total-count">0</strong>
                     </div>
                 </div>
-                <div class="table-wrapper">
+                <!-- Desktop table -->
+                <div class="table-wrapper desktop-only">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -259,10 +306,11 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody id="records-table-body">
-                        </tbody>
+                        <tbody id="records-table-body"></tbody>
                     </table>
                 </div>
+                <!-- Mobile card list -->
+                <div class="mobile-card-list mobile-only" id="records-card-list"></div>
                 <p class="empty-message" id="no-records-msg">Pilih tarikh untuk melihat rekod kehadiran.</p>
             </div>
         </section>
@@ -273,7 +321,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Export Laporan PDF</h3>
                 </div>
-                <div class="export-options">
+                <div class="form-stack">
                     <div class="form-group">
                         <label for="export-type">Jenis Laporan</label>
                         <select id="export-type" class="select-input" onchange="toggleExportOptions()">
@@ -283,34 +331,35 @@
                         </select>
                     </div>
 
-                    <div id="export-daily-options" class="export-sub-options">
+                    <div id="export-daily-options">
                         <div class="form-group">
                             <label for="export-daily-date">Tarikh</label>
                             <input type="date" id="export-daily-date">
                         </div>
                     </div>
 
-                    <div id="export-range-options" class="export-sub-options" style="display:none;">
-                        <div class="form-group">
-                            <label for="export-date-from">Dari Tarikh</label>
-                            <input type="date" id="export-date-from">
-                        </div>
-                        <div class="form-group">
-                            <label for="export-date-to">Hingga Tarikh</label>
-                            <input type="date" id="export-date-to">
+                    <div id="export-range-options" style="display:none;">
+                        <div class="form-row-2col">
+                            <div class="form-group">
+                                <label for="export-date-from">Dari Tarikh</label>
+                                <input type="date" id="export-date-from">
+                            </div>
+                            <div class="form-group">
+                                <label for="export-date-to">Hingga Tarikh</label>
+                                <input type="date" id="export-date-to">
+                            </div>
                         </div>
                     </div>
 
-                    <div id="export-student-options" class="export-sub-options" style="display:none;">
+                    <div id="export-student-options" style="display:none;">
                         <div class="form-group">
                             <label for="export-student-select">Pilih Pelajar</label>
-                            <select id="export-student-select" class="select-input">
-                            </select>
+                            <select id="export-student-select" class="select-input"></select>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="export-class-filter">Kelas (untuk Laporan Harian / Tempoh)</label>
+                        <label for="export-class-filter">Kelas</label>
                         <select id="export-class-filter" class="select-input">
                             <option value="">Semua Kelas</option>
                         </select>
@@ -318,11 +367,10 @@
 
                     <div class="form-group">
                         <label for="export-school-name">Nama Sekolah / Institusi</label>
-                        <input type="text" id="export-school-name" placeholder="Cth: SK Taman Bestari" value="">
+                        <input type="text" id="export-school-name" placeholder="Cth: SK Taman Bestari">
                     </div>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-primary btn-lg" onclick="exportPDF()">📄 Export PDF</button>
+
+                    <button class="btn btn-primary btn-lg btn-full" onclick="exportPDF()">📄 Export PDF</button>
                 </div>
             </div>
 
@@ -344,8 +392,8 @@
             <h3>Pengesahan</h3>
             <p id="modal-message">Adakah anda pasti?</p>
             <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
-                <button class="btn btn-danger" id="modal-confirm-btn" onclick="confirmDelete()">Padam</button>
+                <button class="btn btn-secondary btn-full" onclick="closeModal()">Batal</button>
+                <button class="btn btn-danger btn-full" id="modal-confirm-btn" onclick="confirmDelete()">Padam</button>
             </div>
         </div>
     </div>
