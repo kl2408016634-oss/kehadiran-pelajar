@@ -1,10 +1,11 @@
 // Service Worker - Sistem Kehadiran Pelajar
-const CACHE_NAME = 'kehadiran-v1';
+const CACHE_NAME = 'kehadiran-v2';
 const ASSETS = [
     './',
     './index.html',
     './style.css',
     './app.js',
+    './firebase-config.js',
     './manifest.json'
 ];
 

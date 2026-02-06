@@ -1,22 +1,76 @@
 /* ======================================
    Sistem Kehadiran Pelajar - App Logic
+   (Firebase Realtime Database + localStorage fallback)
    ====================================== */
 
-// ====== DATA STORE (LocalStorage) ======
-function getStudents() {
-    return JSON.parse(localStorage.getItem('students') || '[]');
-}
+// ====== DATA STORE ======
+// In-memory cache
+let studentsCache = [];
+let recordsCache = {};
+let dataReady = false;
 
-function saveStudents(students) {
-    localStorage.setItem('students', JSON.stringify(students));
+function getStudents() {
+    return studentsCache;
 }
 
 function getAttendanceRecords() {
-    return JSON.parse(localStorage.getItem('attendanceRecords') || '{}');
+    return recordsCache;
+}
+
+function saveStudents(students) {
+    studentsCache = students;
+    if (useFirebase && db) {
+        db.ref('students').set(students);
+    } else {
+        localStorage.setItem('students', JSON.stringify(students));
+    }
 }
 
 function saveAttendanceRecords(records) {
-    localStorage.setItem('attendanceRecords', JSON.stringify(records));
+    recordsCache = records;
+    if (useFirebase && db) {
+        db.ref('attendanceRecords').set(records);
+    } else {
+        localStorage.setItem('attendanceRecords', JSON.stringify(records));
+    }
+}
+
+// Load initial data
+function loadData() {
+    return new Promise((resolve) => {
+        if (useFirebase && db) {
+            let loaded = 0;
+            const checkDone = () => { if (++loaded >= 2) resolve(); };
+
+            db.ref('students').on('value', (snapshot) => {
+                studentsCache = snapshot.val() || [];
+                // Ensure it's an array
+                if (!Array.isArray(studentsCache)) {
+                    studentsCache = Object.values(studentsCache);
+                }
+                if (dataReady) refreshAllViews();
+                checkDone();
+            });
+
+            db.ref('attendanceRecords').on('value', (snapshot) => {
+                recordsCache = snapshot.val() || {};
+                if (dataReady) refreshAllViews();
+                checkDone();
+            });
+        } else {
+            studentsCache = JSON.parse(localStorage.getItem('students') || '[]');
+            recordsCache = JSON.parse(localStorage.getItem('attendanceRecords') || '{}');
+            resolve();
+        }
+    });
+}
+
+function refreshAllViews() {
+    updateClassFilters();
+    updateDashboard();
+    renderStudentList();
+    renderAttendanceForm();
+    populateExportStudentSelect();
 }
 
 // ====== SERVICE WORKER REGISTRATION ======
@@ -29,16 +83,40 @@ if ('serviceWorker' in navigator) {
 }
 
 // ====== INIT ======
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     setCurrentDate();
     setDefaultDates();
-    updateClassFilters();
-    updateDashboard();
-    renderStudentList();
-    renderAttendanceForm();
-    populateExportStudentSelect();
+    showLoadingState(true);
+
+    await loadData();
+    dataReady = true;
+
+    refreshAllViews();
+    showLoadingState(false);
     setupMobileOverlay();
+    showConnectionStatus();
 });
+
+function showLoadingState(loading) {
+    const dashboard = document.getElementById('tab-dashboard');
+    if (loading) {
+        const loader = document.createElement('div');
+        loader.id = 'loading-indicator';
+        loader.innerHTML = '<p style="text-align:center;padding:2rem;color:#64748b;">Memuatkan data...</p>';
+        dashboard.prepend(loader);
+    } else {
+        const loader = document.getElementById('loading-indicator');
+        if (loader) loader.remove();
+    }
+}
+
+function showConnectionStatus() {
+    if (useFirebase) {
+        showToast('Disambungkan ke Firebase! Data dikongsi untuk semua pengguna.', 'success');
+    } else {
+        showToast('Mod offline — data hanya di browser ini. Sila setup Firebase untuk berkongsi data.', 'info');
+    }
+}
 
 function setCurrentDate() {
     const today = new Date();
@@ -57,15 +135,12 @@ function setDefaultDates() {
 
 // ====== NAVIGATION ======
 function switchTab(tabName) {
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
-    // Show selected tab
     document.getElementById(`tab-${tabName}`).classList.add('active');
     document.querySelector(`.nav-btn[data-tab="${tabName}"]`).classList.add('active');
 
-    // Update title
     const titles = {
         dashboard: 'Dashboard',
         students: 'Senarai Pelajar',
@@ -75,14 +150,12 @@ function switchTab(tabName) {
     };
     document.getElementById('page-title').textContent = titles[tabName] || tabName;
 
-    // Refresh tab data
     if (tabName === 'dashboard') updateDashboard();
     if (tabName === 'students') renderStudentList();
     if (tabName === 'attendance') renderAttendanceForm();
     if (tabName === 'records') loadRecords();
     if (tabName === 'export') populateExportStudentSelect();
 
-    // Close sidebar on mobile
     document.getElementById('sidebar').classList.remove('open');
 }
 
@@ -104,7 +177,6 @@ function addStudent(event) {
 
     const students = getStudents();
 
-    // Check duplicate ID
     if (students.some(s => s.id === id)) {
         showToast('No. ID sudah wujud! Sila gunakan ID lain.', 'error');
         return;
@@ -114,7 +186,6 @@ function addStudent(event) {
     students.sort((a, b) => a.name.localeCompare(b.name));
     saveStudents(students);
 
-    // Reset form
     document.getElementById('add-student-form').reset();
     showToast(`Pelajar "${name}" berjaya ditambah!`, 'success');
 
@@ -224,7 +295,6 @@ function renderAttendanceForm() {
     noMsg.style.display = 'none';
     saveSection.style.display = 'flex';
 
-    // Check existing records for this date
     const date = document.getElementById('attendance-date').value;
     const records = getAttendanceRecords();
     const dateRecords = records[date] || {};
@@ -253,13 +323,11 @@ function renderAttendanceForm() {
     }).join('');
 }
 
-// Temporary attendance state
 let tempAttendance = {};
 
 function setAttendance(studentId, status, btnElement) {
     tempAttendance[studentId] = status;
 
-    // Update button styles
     const row = btnElement.closest('.attendance-toggle');
     row.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.classList.remove('active-present', 'active-absent');
@@ -281,7 +349,6 @@ function markAll(status) {
         tempAttendance[s.id] = status;
     });
 
-    // Update all buttons visually
     const rows = document.querySelectorAll('#attendance-table-body .attendance-toggle');
     rows.forEach(row => {
         row.querySelectorAll('.toggle-btn').forEach(btn => {
@@ -308,7 +375,6 @@ function saveAttendance() {
     const classFilter = document.getElementById('attendance-class-filter').value;
     let filtered = classFilter ? students.filter(s => s.class === classFilter) : students;
 
-    // Check if all students have attendance marked
     const unmarked = filtered.filter(s => !tempAttendance[s.id]);
     if (unmarked.length > 0) {
         showToast(`${unmarked.length} pelajar belum ditandakan. Sila tandakan semua pelajar.`, 'error');
@@ -318,7 +384,6 @@ function saveAttendance() {
     const records = getAttendanceRecords();
     if (!records[date]) records[date] = {};
 
-    // Save attendance for filtered students
     filtered.forEach(s => {
         records[date][s.id] = tempAttendance[s.id];
     });
@@ -406,7 +471,6 @@ function updateDashboard() {
     document.getElementById('stat-absent-today').textContent = absentToday;
     document.getElementById('stat-percent-today').textContent = percent + '%';
 
-    // Today's attendance list
     const todayList = document.getElementById('today-attendance-list');
     const absentList = document.getElementById('today-absent-list');
 
@@ -468,7 +532,6 @@ function exportPDF() {
     const students = getStudents();
     const records = getAttendanceRecords();
 
-    // Header
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
     doc.text(schoolName, 105, 20, { align: 'center' });
@@ -485,7 +548,6 @@ function exportPDF() {
         exportStudentPDF(doc, students, records);
     }
 
-    // Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -497,12 +559,9 @@ function exportPDF() {
         );
     }
 
-    // Save
     const filename = `Kehadiran_${type}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
     showToast('PDF berjaya dijana dan dimuat turun!', 'success');
-
-    // Preview
     updateExportPreview(type, students, records, classFilter);
 }
 
@@ -530,10 +589,7 @@ function exportDailyPDF(doc, students, records, classFilter) {
     }
 
     const tableData = filtered.map((s, i) => [
-        i + 1,
-        s.id,
-        s.name,
-        s.class,
+        i + 1, s.id, s.name, s.class,
         dateRecords[s.id] === 'hadir' ? 'HADIR' : 'TIDAK HADIR'
     ]);
 
@@ -542,33 +598,14 @@ function exportDailyPDF(doc, students, records, classFilter) {
         head: [['No.', 'No. ID', 'Nama Pelajar', 'Kelas', 'Status']],
         body: tableData,
         theme: 'grid',
-        headStyles: {
-            fillColor: [79, 70, 229],
-            textColor: 255,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        styles: {
-            fontSize: 9,
-            cellPadding: 3,
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 12 },
-            1: { cellWidth: 25 },
-            4: { halign: 'center', cellWidth: 30 }
-        },
-        alternateRowStyles: {
-            fillColor: [245, 247, 250]
-        },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { cellWidth: 25 }, 4: { halign: 'center', cellWidth: 30 } },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
         didParseCell: function (data) {
             if (data.column.index === 4 && data.section === 'body') {
-                if (data.cell.raw === 'HADIR') {
-                    data.cell.styles.textColor = [5, 150, 105];
-                    data.cell.styles.fontStyle = 'bold';
-                } else {
-                    data.cell.styles.textColor = [220, 38, 38];
-                    data.cell.styles.fontStyle = 'bold';
-                }
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = data.cell.raw === 'HADIR' ? [5, 150, 105] : [220, 38, 38];
             }
         }
     });
@@ -590,7 +627,6 @@ function exportRangePDF(doc, students, records, classFilter) {
 
     let filtered = classFilter ? students.filter(s => s.class === classFilter) : [...students];
 
-    // Get all dates in range
     const dates = [];
     let current = new Date(dateFrom);
     const end = new Date(dateTo);
@@ -599,14 +635,11 @@ function exportRangePDF(doc, students, records, classFilter) {
         current.setDate(current.getDate() + 1);
     }
 
-    // Build summary per student
     const tableData = filtered.map((s, i) => {
-        let present = 0;
-        let absent = 0;
+        let present = 0, absent = 0;
         dates.forEach(date => {
             if (records[date] && records[date][s.id]) {
-                if (records[date][s.id] === 'hadir') present++;
-                else absent++;
+                if (records[date][s.id] === 'hadir') present++; else absent++;
             }
         });
         const total = present + absent;
@@ -621,41 +654,21 @@ function exportRangePDF(doc, students, records, classFilter) {
         head: [['No.', 'No. ID', 'Nama', 'Kelas', 'Hadir', 'Tidak Hadir', 'Jumlah Hari', '% Kehadiran']],
         body: tableData,
         theme: 'grid',
-        headStyles: {
-            fillColor: [79, 70, 229],
-            textColor: 255,
-            fontStyle: 'bold',
-            halign: 'center',
-            fontSize: 8
-        },
-        styles: {
-            fontSize: 8,
-            cellPadding: 2.5,
-        },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 8 },
+        styles: { fontSize: 8, cellPadding: 2.5 },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 10 },
-            1: { cellWidth: 20 },
-            4: { halign: 'center', cellWidth: 15 },
-            5: { halign: 'center', cellWidth: 20 },
-            6: { halign: 'center', cellWidth: 20 },
-            7: { halign: 'center', cellWidth: 20 }
+            0: { halign: 'center', cellWidth: 10 }, 1: { cellWidth: 20 },
+            4: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 20 },
+            6: { halign: 'center', cellWidth: 20 }, 7: { halign: 'center', cellWidth: 20 }
         },
-        alternateRowStyles: {
-            fillColor: [245, 247, 250]
-        },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
         didParseCell: function (data) {
             if (data.column.index === 7 && data.section === 'body') {
                 const val = parseInt(data.cell.raw);
-                if (val >= 80) {
-                    data.cell.styles.textColor = [5, 150, 105];
-                    data.cell.styles.fontStyle = 'bold';
-                } else if (val >= 50) {
-                    data.cell.styles.textColor = [245, 158, 11];
-                    data.cell.styles.fontStyle = 'bold';
-                } else {
-                    data.cell.styles.textColor = [220, 38, 38];
-                    data.cell.styles.fontStyle = 'bold';
-                }
+                data.cell.styles.fontStyle = 'bold';
+                if (val >= 80) data.cell.styles.textColor = [5, 150, 105];
+                else if (val >= 50) data.cell.styles.textColor = [245, 158, 11];
+                else data.cell.styles.textColor = [220, 38, 38];
             }
         }
     });
@@ -675,22 +688,15 @@ function exportStudentPDF(doc, students, records) {
     doc.text(`Nama Pelajar: ${student.name}`, 20, 42);
     doc.text(`No. ID: ${student.id}  |  Kelas: ${student.class}`, 20, 48);
 
-    // Gather all records for this student
     const allDates = Object.keys(records).sort();
     const tableData = [];
-    let totalPresent = 0;
-    let totalAbsent = 0;
+    let totalPresent = 0, totalAbsent = 0;
 
-    allDates.forEach((date, i) => {
+    allDates.forEach(date => {
         if (records[date][studentId]) {
             const status = records[date][studentId];
-            if (status === 'hadir') totalPresent++;
-            else totalAbsent++;
-            tableData.push([
-                tableData.length + 1,
-                formatDate(date),
-                status === 'hadir' ? 'HADIR' : 'TIDAK HADIR'
-            ]);
+            if (status === 'hadir') totalPresent++; else totalAbsent++;
+            tableData.push([tableData.length + 1, formatDate(date), status === 'hadir' ? 'HADIR' : 'TIDAK HADIR']);
         }
     });
 
@@ -709,33 +715,14 @@ function exportStudentPDF(doc, students, records) {
         head: [['No.', 'Tarikh', 'Status']],
         body: tableData,
         theme: 'grid',
-        headStyles: {
-            fillColor: [79, 70, 229],
-            textColor: 255,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        styles: {
-            fontSize: 10,
-            cellPadding: 3,
-        },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 15 },
-            1: { cellWidth: 50 },
-            2: { halign: 'center', cellWidth: 40 }
-        },
-        alternateRowStyles: {
-            fillColor: [245, 247, 250]
-        },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 0: { halign: 'center', cellWidth: 15 }, 1: { cellWidth: 50 }, 2: { halign: 'center', cellWidth: 40 } },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
         didParseCell: function (data) {
             if (data.column.index === 2 && data.section === 'body') {
-                if (data.cell.raw === 'HADIR') {
-                    data.cell.styles.textColor = [5, 150, 105];
-                    data.cell.styles.fontStyle = 'bold';
-                } else {
-                    data.cell.styles.textColor = [220, 38, 38];
-                    data.cell.styles.fontStyle = 'bold';
-                }
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = data.cell.raw === 'HADIR' ? [5, 150, 105] : [220, 38, 38];
             }
         }
     });
@@ -749,7 +736,6 @@ function updateExportPreview(type, students, records, classFilter) {
         const dateRecords = records[date] || {};
         let filtered = students.filter(s => dateRecords[s.id]);
         if (classFilter) filtered = filtered.filter(s => s.class === classFilter);
-
         const presentCount = filtered.filter(s => dateRecords[s.id] === 'hadir').length;
         const absentCount = filtered.filter(s => dateRecords[s.id] === 'tidak hadir').length;
 
@@ -758,8 +744,7 @@ function updateExportPreview(type, students, records, classFilter) {
             <p>Jumlah Pelajar: <strong>${filtered.length}</strong></p>
             <p>Hadir: <strong style="color:var(--success)">${presentCount}</strong> | 
                Tidak Hadir: <strong style="color:var(--danger)">${absentCount}</strong></p>
-            <p>PDF telah dimuat turun.</p>
-        `;
+            <p>PDF telah dimuat turun.</p>`;
     } else if (type === 'range') {
         preview.innerHTML = `<h4>Laporan Tempoh</h4><p>PDF telah dimuat turun.</p>`;
     } else {
@@ -788,15 +773,11 @@ function showToast(message, type = 'info') {
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
     container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+    setTimeout(() => { toast.remove(); }, 3000);
 }
 
 // ====== MOBILE OVERLAY ======
 function setupMobileOverlay() {
-    // Create overlay element for mobile sidebar
     const overlay = document.createElement('div');
     overlay.className = 'sidebar-overlay';
     overlay.id = 'sidebar-overlay';
@@ -806,39 +787,30 @@ function setupMobileOverlay() {
     });
     document.body.appendChild(overlay);
 
-    // Update toggleSidebar to also toggle overlay
-    const originalToggle = window.toggleSidebar;
     window.toggleSidebar = function () {
         const sidebar = document.getElementById('sidebar');
         sidebar.classList.toggle('open');
         overlay.classList.toggle('visible', sidebar.classList.contains('open'));
     };
 
-    // Close sidebar when nav button clicked on mobile
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             overlay.classList.remove('visible');
         });
     });
 
-    // Swipe to open sidebar
     let touchStartX = 0;
-    let touchEndX = 0;
-
     document.addEventListener('touchstart', e => {
         touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
 
     document.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
+        const touchEndX = e.changedTouches[0].screenX;
         const diff = touchEndX - touchStartX;
-
-        // Swipe right from left edge to open
         if (touchStartX < 30 && diff > 80) {
             document.getElementById('sidebar').classList.add('open');
             overlay.classList.add('visible');
         }
-        // Swipe left to close
         if (diff < -80 && document.getElementById('sidebar').classList.contains('open')) {
             document.getElementById('sidebar').classList.remove('open');
             overlay.classList.remove('visible');
@@ -851,24 +823,17 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-
-    // Show install button
     const installBtn = document.createElement('button');
     installBtn.className = 'btn btn-primary install-btn';
     installBtn.innerHTML = '📲 Pasang Aplikasi';
     installBtn.addEventListener('click', () => {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(choice => {
-            if (choice.outcome === 'accepted') {
-                showToast('Aplikasi berjaya dipasang!', 'success');
-            }
+            if (choice.outcome === 'accepted') showToast('Aplikasi berjaya dipasang!', 'success');
             deferredPrompt = null;
             installBtn.remove();
         });
     });
-
     const sidebar = document.querySelector('.sidebar-footer');
-    if (sidebar) {
-        sidebar.prepend(installBtn);
-    }
+    if (sidebar) sidebar.prepend(installBtn);
 });
