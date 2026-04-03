@@ -3,6 +3,9 @@
    Firebase + localStorage | Mobile-First
    ====================================== */
 
+/** URL rasmi sahaja — bookmark / kongsi link ini */
+const OFFICIAL_KEHADIRAN_URL = 'https://kl2408016634-oss.github.io/kehadiran-pelajar/';
+
 // ====== DATA STORE ======
 let studentsCache = [];
 let recordsCache = {};
@@ -88,7 +91,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLoadingState(false);
     setupMobileOverlay();
     showConnectionStatus();
+    checkOfficialHost();
 });
+
+/** Papar amaran jika bukan dari GitHub Pages kehadiran (localhost & file OK) */
+function checkOfficialHost() {
+    const h = location.hostname;
+    const path = location.pathname || '';
+    if (!h || h === 'localhost' || h === '127.0.0.1') return;
+    if (h === 'kl2408016634-oss.github.io' && path.indexOf('kehadiran-pelajar') !== -1) return;
+    const el = document.getElementById('host-warning');
+    if (!el) return;
+    el.style.display = 'block';
+    el.innerHTML = 'Ini bukan laman rasmi sistem kehadiran. Buka & bookmark: <a href="' + OFFICIAL_KEHADIRAN_URL + '">' + OFFICIAL_KEHADIRAN_URL + '</a>';
+}
 
 function showLoadingState(loading) {
     const el = document.getElementById('loading-indicator');
