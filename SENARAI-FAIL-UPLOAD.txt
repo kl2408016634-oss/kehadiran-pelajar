@@ -1,0 +1,35 @@
+================================================================================
+SENARAI FAIL — UPLOAD SEMUA KE GITHUB REPO KEHADIRAN SAHAJA
+================================================================================
+Repo contoh: https://github.com/USERNAME/kehadiran-pelajar
+URL hidup contoh: https://USERNAME.github.io/kehadiran-pelajar/
+
+Langkah:
+1. GitHub repo → Add file → Upload files
+2. Tandakan SEMUA fail di bawah (Ctrl+A dalam folder projek)
+3. Commit changes
+4. Tunggu 1–2 minit. Buka URL GitHub Pages (bukan domain projek lain).
+
+--------------------------------------------------------------------------------
+FAIL WAJIB (tandakan semua bila upload):
+--------------------------------------------------------------------------------
+  index.html
+  style.css
+  app.js
+  firebase-config.js
+  manifest.json
+  sw.js
+  404.html
+  .nojekyll          ← fail kosong (GitHub Pages statik)
+  _headers            ← optional Netlify; tak rosak kalau ada di GitHub
+
+  CARA-DEPLOY.md      ← optional (panduan)
+  SENARAI-FAIL-UPLOAD.txt  ← optional (fail ini)
+
+--------------------------------------------------------------------------------
+NOTA
+--------------------------------------------------------------------------------
+- JANGAN campur folder / fail dari projek lain dalam repo ini.
+- Jangan guna URL domain lain jika nak app kehadiran "bersih" — guna GitHub Pages repo kehadiran.
+
+================================================================================

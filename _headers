@@ -1,0 +1,3 @@
+# Netlify / beberapa host statik: hantar header sama seperti meta di index.html
+/*
+  Permissions-Policy: browsing-topics=(), interest-cohort=()
