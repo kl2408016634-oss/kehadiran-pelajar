@@ -88,7 +88,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLoadingState(false);
     setupMobileOverlay();
     showConnectionStatus();
+    showHostConfirm();
 });
+
+/** Tunjuk host semasa — supaya jelas bila app kehadiran BETUL dibuka */
+function showHostConfirm() {
+    const h = location.hostname || '(tempatan)';
+    const txt = '📍 Anda di: ' + h + ' — ini app Kehadiran (betul jika nampak dashboard ini).';
+    const el = document.getElementById('host-confirm');
+    const elM = document.getElementById('host-confirm-mobile');
+    if (el) el.textContent = txt;
+    if (elM) elM.textContent = '📍 ' + h;
+}
 
 function showLoadingState(loading) {
     const el = document.getElementById('loading-indicator');

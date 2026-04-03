@@ -75,6 +75,13 @@ body {
 .nav-btn.active { background: var(--primary); color: #fff; font-weight: 600; }
 .nav-icon { font-size: 1.15rem; width: 1.5rem; text-align: center; }
 .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+.host-confirm { margin-top: 0.5rem; color: #86efac; font-size: 0.7rem; line-height: 1.35; word-break: break-all; }
+.top-bar-title-wrap { flex: 1; min-width: 0; }
+.host-confirm-mobile { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.15rem; line-height: 1.2; word-break: break-all; }
+.tip-card { background: #fef3c7; border: 1px solid #fcd34d; margin-bottom: 1rem; }
+.tip-card p { font-size: 0.88rem; color: #78350f; line-height: 1.45; margin-bottom: 0.5rem; }
+.tip-card p:last-child { margin-bottom: 0; }
+.tip-card .tip-small { font-size: 0.8rem; color: #92400e; }
 /* ====== Bottom Navigation (Mobile) ====== */
 .bottom-nav {
     display: none;
@@ -113,14 +120,14 @@ body {
 .top-bar {
     background: var(--bg-card);
     padding: 1rem 2rem;
-    display: flex; align-items: center; gap: 1rem;
+    display: flex; align-items: flex-start; gap: 1rem;
     border-bottom: 1px solid var(--border);
     position: sticky; top: 0; z-index: 50;
     box-shadow: var(--shadow);
 }
-.menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); }
+.menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text); align-self: center; }
 .top-bar h1 { font-size: 1.35rem; font-weight: 700; }
-.top-bar-right { margin-left: auto; }
+.top-bar-right { margin-left: auto; align-self: center; }
 .date-display { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
 
 /* ====== Tab Content ====== */

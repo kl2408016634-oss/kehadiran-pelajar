@@ -56,6 +56,7 @@
         </nav>
         <div class="sidebar-footer">
             <p>Sistem Kehadiran Pelajar v2.0</p>
+            <p id="host-confirm" class="host-confirm"></p>
         </div>
     </aside>
 
@@ -88,7 +89,10 @@
         <!-- Top Bar -->
         <header class="top-bar">
             <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-            <h1 id="page-title">Dashboard</h1>
+            <div class="top-bar-title-wrap">
+                <h1 id="page-title">Dashboard</h1>
+                <p id="host-confirm-mobile" class="host-confirm-mobile"></p>
+            </div>
             <div class="top-bar-right">
                 <span class="date-display" id="current-date"></span>
             </div>
@@ -96,6 +100,10 @@
 
         <!-- Dashboard Tab -->
         <section class="tab-content active" id="tab-dashboard">
+            <div class="card tip-card" id="tip-wrong-site">
+                <p><strong>Penjelasan ringkas:</strong> Halaman ini ialah <strong>Dashboard Kehadiran</strong> (statistik, pelajar, kehadiran). Bukan borang login email/sekuriti lain.</p>
+                <p class="tip-small">Jika awak nampak <strong>login JOSMY / “secure vault” / enkripsi</strong> — itu <strong>bukan</strong> app ini. Tutup tab itu. Taip semula URL host tempat awak <strong>benar-benar</strong> pasang fail kehadiran (bukan domain projek lain).</p>
+            </div>
             <div class="stats-grid">
                 <div class="stat-card stat-total">
                     <div class="stat-icon">👥</div>
