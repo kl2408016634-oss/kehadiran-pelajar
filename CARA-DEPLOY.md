@@ -22,17 +22,14 @@
 
 ---
 
-## Cara 3: GitHub Pages (Percuma, Kekal)
+## Cara 3: Domain / hosting sendiri (cPanel, VPS, dll.)
 
-1. Daftar di **https://github.com** (jika belum ada akaun)
-2. Klik **"New Repository"**
-3. Namakan repo: `kehadiran-pelajar`
-4. Upload **semua** fail dalam folder projek ini (termasuk `firebase-config.js`, `.nojekyll`, `404.html`) — repo **ini sahaja** untuk kehadiran, jangan campur folder projek lain.
-5. Pergi ke **Settings > Pages**
-6. Pilih Source: **Deploy from a branch**
-7. Pilih Branch: **main**, folder: **/ (root)**
-8. Klik Save
-9. URL anda: `https://username.github.io/kehadiran-pelajar`
+1. Zip semua fail projek kehadiran.
+2. Muat naik ke folder `public_html` (atau subfolder) melalui **File Manager** / FTP.
+3. Pastikan `index.html` di root folder yang URL tunjuk ke situ.
+4. URL jadi ikut domain anda sendiri (contoh `https://sekolah.edu.my/kehadiran/`).
+
+*(GitHub Pages ialah pilihan lain jika anda sudah biasa — kod aplikasi ini **tidak** bergantung pada mana-mana domain tertentu.)*
 
 ---
 
@@ -54,8 +51,8 @@ Selepas deploy, buka URL di phone browser. Kemudian:
 
 Ini biasanya **bukan** kod yang dicampur, tetapi **URL salah**, **cache**, atau **folder lain di server**.
 
-1. Guna URL **kehadiran sahaja** (contoh GitHub Pages repo kehadiran anda), bukan domain/projek lain.
-2. Jangan letak fail kehadiran dalam **folder yang sama** dengan aplikasi lain di server yang sama — deploy dalam repo atau subdomain berasingan.
+1. Guna URL **folder kehadiran** yang betul, bukan domain/projek lain.
+2. Jangan letak fail kehadiran dalam **folder yang sama** dengan aplikasi lain — guna folder atau subdomain berasingan.
 3. Chrome/Edge: `F12` → **Application** → **Service workers** → **Unregister** untuk URL kehadiran; kemudian **Clear site data**.
 4. Cuba **Ctrl+Shift+R** atau buka dalam **mod penyamaran**.
 5. Di telefon: padam shortcut **Tambah ke Skrin Utama** lama, tambah semula selepas buka URL yang betul.

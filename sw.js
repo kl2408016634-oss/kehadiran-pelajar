@@ -1,6 +1,6 @@
 // Service Worker - Sistem Kehadiran Pelajar
 // Hanya cache fail senarai di bawah — elak cache “semua URL” (boleh serabut dengan projek lain pada origin yang sama).
-const CACHE_NAME = 'kehadiran-v6';
+const CACHE_NAME = 'kehadiran-v7';
 const ASSETS = [
     './',
     './index.html',

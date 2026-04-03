@@ -1,14 +1,10 @@
 ================================================================================
 SENARAI FAIL — UPLOAD SEMUA KE GITHUB REPO KEHADIRAN SAHAJA
 ================================================================================
-Repo contoh: https://github.com/USERNAME/kehadiran-pelajar
-URL hidup contoh: https://USERNAME.github.io/kehadiran-pelajar/
-
-Langkah:
-1. GitHub repo → Add file → Upload files
-2. Tandakan SEMUA fail di bawah (Ctrl+A dalam folder projek)
-3. Commit changes
-4. Tunggu 1–2 minit. Buka URL GitHub Pages (bukan domain projek lain).
+Langkah umum (Netlify / hosting sendiri / lain):
+1. Muat naik SEMUA fail di bawah ke host pilihan anda.
+2. Buka URL folder tersebut dalam browser — mesti nampak app kehadiran.
+3. Jangan campur fail projek lain dalam folder yang sama.
 
 --------------------------------------------------------------------------------
 FAIL WAJIB (tandakan semua bila upload):

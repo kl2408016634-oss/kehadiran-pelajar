@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Permissions-Policy" content="browsing-topics=(), interest-cohort=()">
-    <meta name="description" content="Sistem kehadiran pelajar (statik). Hanya fail dalam folder ini.">
+    <meta name="description" content="Sistem kehadiran pelajar — aplikasi statik; boleh dihos di mana-mana pelayan web.">
     <meta name="application-name" content="Kehadiran Pelajar">
     <meta name="theme-color" content="#4f46e5">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="Kehadiran">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Sistem Kehadiran Pelajar</title>
-    <link rel="canonical" href="https://kl2408016634-oss.github.io/kehadiran-pelajar/">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%234f46e5'/%3E%3Ctext x='50' y='70' font-size='55' text-anchor='middle' fill='white'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%234f46e5'/%3E%3Ctext x='50' y='70' font-size='55' text-anchor='middle' fill='white'%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E">
     <link rel="manifest" href="manifest.json">
@@ -25,7 +24,6 @@
     <script src="firebase-config.js"></script>
 </head>
 <body>
-    <div id="host-warning" class="host-warning" style="display:none;" role="alert"></div>
     <!-- Sidebar (Desktop) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -57,9 +55,7 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <p class="official-url-label">Laman rasmi (simpan ini):</p>
-            <p class="official-url"><a id="sidebar-official-link" href="https://kl2408016634-oss.github.io/kehadiran-pelajar/" target="_blank" rel="noopener noreferrer">github.io/kehadiran-pelajar</a></p>
-            <p class="version-tag">v2.0</p>
+            <p>Sistem Kehadiran Pelajar v2.0</p>
         </div>
     </aside>
 
@@ -100,11 +96,6 @@
 
         <!-- Dashboard Tab -->
         <section class="tab-content active" id="tab-dashboard">
-            <div class="card official-bookmark-card">
-                <p class="official-bookmark-text"><strong>Laman rasmi sistem kehadiran:</strong>
-                    <a id="dash-official-link" href="https://kl2408016634-oss.github.io/kehadiran-pelajar/" target="_blank" rel="noopener noreferrer">kl2408016634-oss.github.io/kehadiran-pelajar</a>
-                    — guna &amp; bookmark <strong>URL ini sahaja</strong>.</p>
-            </div>
             <div class="stats-grid">
                 <div class="stat-card stat-total">
                     <div class="stat-icon">👥</div>
